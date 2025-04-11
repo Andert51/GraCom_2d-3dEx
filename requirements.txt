@@ -1,0 +1,11 @@
+pygame
+moderngl
+numba
+PyGLM
+numpy
+opensimplex
+noise
+pyrr
+glfw
+pyopengl
+

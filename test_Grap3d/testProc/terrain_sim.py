@@ -5,108 +5,117 @@ from pyrr import Matrix44, Vector3
 from noise import pnoise2
 import time
 import os
+import random
 
-# Configuración inicial
 WIDTH, HEIGHT = 1280, 720
 
-# Generación procedural del terreno
 def generate_terrain(size=100, scale=1.0, height_scale=10.0, freq=0.1):
-    vertices = []
-    normals = []
-
+    seed = random.randint(0, 1000)
+    vertices, normals = [], []
     for z in range(size):
         for x in range(size):
-            y = pnoise2(x * freq, z * freq, octaves=4) * height_scale
+            # Desplazamiento aleatorio para que siempre sea diferente
+            y = pnoise2((x + seed) * freq, (z + seed) * freq, octaves=4) * height_scale + 4.0
             vertices.append([x * scale, y, z * scale])
-            normals.append([0.0, 1.0, 0.0])  # temporal
-
+            normals.append([0.0, 1.0, 0.0])
     vertices = np.array(vertices, dtype='f4')
     normals = np.array(normals, dtype='f4')
 
     indices = []
     for z in range(size - 1):
         for x in range(size - 1):
-            top_left = z * size + x
-            top_right = top_left + 1
-            bottom_left = (z + 1) * size + x
-            bottom_right = bottom_left + 1
-
-            indices.extend([top_left, bottom_left, top_right])
-            indices.extend([top_right, bottom_left, bottom_right])
+            tl = z * size + x
+            tr = tl + 1
+            bl = (z + 1) * size + x
+            br = bl + 1
+            indices.extend([tl, bl, tr, tr, bl, br])
 
     return vertices, normals, np.array(indices, dtype='i4')
 
-# Main
+class ParticleSystem:
+    def __init__(self, ctx, shader, num_particles=3000):
+        self.ctx = ctx
+        self.shader = shader
+        self.num = num_particles
+        self.positions = np.random.uniform(0, 100, (num_particles, 3)).astype('f4')
+        self.positions[:, 1] += np.random.uniform(15, 25, num_particles)  # más altura variable
+
+        self.velocities = np.random.uniform(-0.005, 0.005, (num_particles, 3)).astype('f4')
+
+        self.vbo = ctx.buffer(self.positions.tobytes())
+        self.vao = ctx.simple_vertex_array(self.shader, self.vbo, 'in_position')
+
+    def update(self):
+        self.positions += self.velocities
+        self.positions[:, 1] = np.where(self.positions[:, 1] > 30, 15, self.positions[:, 1])
+        self.vbo.write(self.positions.tobytes())
+
+    def render(self):
+        self.vao.render(mode=moderngl.POINTS)
+
 class TerrainApp:
     def __init__(self):
         if not glfw.init():
-            raise Exception("GLFW initialization failed")
-
+            raise Exception("GLFW init failed")
         glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
         glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
         glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-
-        self.window = glfw.create_window(WIDTH, HEIGHT, "Generación Procedural 3D", None, None)
+        self.window = glfw.create_window(WIDTH, HEIGHT, "Terreno Procedural Realista", None, None)
         if not self.window:
             glfw.terminate()
-            raise Exception("GLFW window creation failed")
-
+            raise Exception("Ventana GLFW falló")
         glfw.make_context_current(self.window)
         self.ctx = moderngl.create_context()
 
-        self.last_time = time.time()
         self.angle_x, self.angle_y = 0, 0
         self.zoom = 200
+        self.last_time = time.time()
 
         self.init_scene()
 
+    def load_shader(self, name):
+        with open(f"shaders/{name}.vert") as v, open(f"shaders/{name}.frag") as f:
+            return self.ctx.program(vertex_shader=v.read(), fragment_shader=f.read())
+
     def init_scene(self):
-        # Cargar shaders
-        with open("shaders/terrain.vert") as f:
-            vertex_shader = f.read()
-        with open("shaders/terrain.frag") as f:
-            fragment_shader = f.read()
-
-        self.program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
-
-        # Generar malla de terreno
-        vertices, normals, indices = generate_terrain()
-        self.vbo = self.ctx.buffer(np.hstack([vertices, normals]).astype('f4').tobytes())
+        # Terreno
+        self.terrain_prog = self.load_shader("terrain")
+        verts, norms, indices = generate_terrain()
+        self.vbo = self.ctx.buffer(np.hstack([verts, norms]).astype('f4').tobytes())
         self.ibo = self.ctx.buffer(indices.tobytes())
-
         self.vao = self.ctx.vertex_array(
-            self.program,
-            [
-                (self.vbo, '3f 3f', 'in_position', 'in_normal'),
-            ],
+            self.terrain_prog,
+            [(self.vbo, '3f 3f', 'in_position', 'in_normal')],
             self.ibo
         )
 
-        self.model = Matrix44.identity()
-        self.program['model'].write(self.model.astype('f4').tobytes())
+        self.terrain_prog['model'].write(Matrix44.identity(dtype='f4'))
+
+        # Partículas
+        self.particle_prog = self.load_shader("particle")
+        self.particle_prog['model'].write(Matrix44.identity(dtype='f4'))
+        self.particles = ParticleSystem(self.ctx, self.particle_prog)
 
     def update_camera(self):
-        view = Matrix44.look_at(
-            eye=Vector3([self.zoom * np.sin(self.angle_y) * np.cos(self.angle_x),
-                         self.zoom * np.sin(self.angle_x),
-                         self.zoom * np.cos(self.angle_y) * np.cos(self.angle_x)]),
-            target=Vector3([50, 0, 50]),
-            up=Vector3([0, 1, 0])
-        )
+        eye = Vector3([
+            self.zoom * np.sin(self.angle_y) * np.cos(self.angle_x),
+            self.zoom * np.sin(self.angle_x),
+            self.zoom * np.cos(self.angle_y) * np.cos(self.angle_x)
+        ])
+        view = Matrix44.look_at(eye, Vector3([50, 0, 50]), Vector3([0, 1, 0]))
         proj = Matrix44.perspective_projection(45.0, WIDTH / HEIGHT, 0.1, 1000.0)
 
-        self.program['view'].write(view.astype('f4').tobytes())
-        self.program['projection'].write(proj.astype('f4').tobytes())
-        self.program['light_pos'].value = (100.0, 100.0, 100.0)
-        self.program['view_pos'].value = tuple(view.inverse[:3, 3])
-        self.program['light_color'].value = (1.0, 1.0, 1.0)
-        self.program['object_color'].value = (0.3, 0.7, 0.3)
+        for prog in [self.terrain_prog, self.particle_prog]:
+            prog['view'].write(view.astype('f4').tobytes())
+            prog['projection'].write(proj.astype('f4').tobytes())
+
+        self.terrain_prog['light_pos'].value = (100.0, 100.0, 100.0)
+        self.terrain_prog['view_pos'].value = tuple(eye)
+        self.terrain_prog['light_color'].value = (1.0, 1.0, 1.0)
 
     def run(self):
         while not glfw.window_should_close(self.window):
             glfw.poll_events()
-
-            # Control simple de cámara
             if glfw.get_key(self.window, glfw.KEY_LEFT) == glfw.PRESS:
                 self.angle_y -= 0.01
             if glfw.get_key(self.window, glfw.KEY_RIGHT) == glfw.PRESS:
@@ -125,6 +134,8 @@ class TerrainApp:
 
             self.update_camera()
             self.vao.render()
+            self.particles.update()
+            self.particles.render()
 
             glfw.swap_buffers(self.window)
 
@@ -133,5 +144,6 @@ class TerrainApp:
 if __name__ == "__main__":
     os.environ["DISPLAY"] = ":0"
     os.environ["XDG_SESSION_TYPE"] = "x11"
-    app = TerrainApp()
-    app.run()
+    TerrainApp().run()
+    os.environ["DISPLAY"] = ":0"
+    os.environ["XDG_SESSION_TYPE"] = "x11"

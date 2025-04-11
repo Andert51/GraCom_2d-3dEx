@@ -74,13 +74,8 @@ def seed():
                     n.el = rand.choice(map['Choice'])
                     n.temp = rand.choice(map['Choice'])
 
-
 print('Seeding')
 seed()
-
-for n in map['nodes']:
-    n.render()
-canvas.update()
 
 def setActive():
     for n in map['nodes']:
@@ -120,35 +115,17 @@ def raiseTemp():
 def process1():
     setActive()
     smoothMap()
-    canvas.delete('all')
-    for n in map['nodes']:
-        n.render()
-    canvas.create_text(5, 5, anchor= 'nw', text= 'Smooth')
-    canvas.update()
 def process2():
     setActive()
     lowerSea()
     canvas.delete('all')
-    for n in map['nodes']:
-        n.render()
-    canvas.create_text(5, 5, anchor= 'nw', text= 'Lower')
-    canvas.update()
 def process3():
     setActive()
-    raiseLand()
-    canvas.delete('all')
-    for n in map['nodes']:
-        n.render()
-    canvas.create_text(5, 5, anchor= 'nw', text= 'Raise')
-    canvas.update()    
+    raiseLand()  
 def process4():
     setActive()
     raiseTemp()
-    canvas.delete('all')
-    for n in map['nodes']:
-        n.render()
-    canvas.create_text(5, 5, anchor= 'nw', text= 'Heat')
-    canvas.update()
+
     
 print('0')
 for i in range(100):
@@ -161,5 +138,10 @@ for i in range(15):
 print('2')
 for i in range(100):
     process1()
+
+canvas.delete('all')
+for n in map['nodes']:
+    n.render()
+canvas.update()
 
 mainloop()

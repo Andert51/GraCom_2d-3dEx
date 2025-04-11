@@ -9,9 +9,12 @@ uniform mat4 projection;
 
 out vec3 normal;
 out vec3 frag_pos;
+out float height;
 
 void main() {
-    frag_pos = vec3(model * vec4(in_position, 1.0));
+    vec4 world_pos = model * vec4(in_position, 1.0);
+    frag_pos = vec3(world_pos);
     normal = mat3(transpose(inverse(model))) * in_normal;
-    gl_Position = projection * view * vec4(frag_pos, 1.0);
+    height = in_position.y;
+    gl_Position = projection * view * world_pos;
 }
