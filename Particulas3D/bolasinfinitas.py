@@ -147,7 +147,7 @@ pygame.init()
 ventana = pygame.display.set_mode((ancho, alto))
 screen = pygame.display.set_caption("Spaceinvader")
 
-img=[pygame.image.load("./spaceinvader.png")]
+img=[pygame.image.load("spaceinvader.png")]
 rect=[img[0].get_rect()]
 
 #MODO PREsinTACION
@@ -866,11 +866,8 @@ while jugando:
 
 	for event in pygame.event.get():
 		print(event)
-		if event.type == pygame.QUIT:
-		    pygame.quit()
-		    exit()		
-      	
-		elif event.type == pygame.KEYUP:
+		if event.type == pygame.KEYUP:
+
 			if event.key==K_UP:
 				usoKEYUP=False
 			elif event.key==K_RIGHT:
@@ -944,7 +941,11 @@ while jugando:
 
 			elif event.key == K_DOWN:
 				usoKEYDOWN=True
-
+    
+			elif event.key == pygame.K_x:
+				jugando = False
+				pygame.quit()
+				sys.exit()
 
 			elif event.key==117: #U
 				#print("U")
