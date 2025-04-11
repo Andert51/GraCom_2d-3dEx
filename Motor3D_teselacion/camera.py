@@ -11,7 +11,7 @@ class Camera:
 
     def __init__(self, render, position):
         """
-        Inicializa la cámara con los parámetros básicos.
+        Inicializa la cámara con los parámetros básicos.git 
 
         :param render: Objeto de renderizado que contiene información como altura y ancho de la pantalla.
         :param position: Posición inicial de la cámara en el espacio 3D.
@@ -100,7 +100,7 @@ class Camera:
         self.axiiIdentity()  # Restaurar vectores iniciales
         self.forward = self.forward @ rotate  # Actualizar vector forward
         self.right = self.right @ rotate  # Actualizar vector right
-        self.up = self.up @ rotate  # Actualizar vector up
+        self.up = self.up @ rotate  # Actualizar vector up 
 
     def camera_matrix(self):
         """

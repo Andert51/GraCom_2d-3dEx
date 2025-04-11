@@ -104,5 +104,11 @@ Todos estos conceptos son ampliamente utilizados en la industria de los videojue
 
 ---
 
-## 📂 Estructura del Repositorio
+## 📜 Instrucciones de Uso 
 
+Dirigirse a la carpeta de cada proyecto y ejecutar el archivo `main.py` correspondiente. Asegúrate de tener instaladas las dependencias necesarias, que se pueden encontrar en los archivos `requirements.txt` de cada proyecto.
+
+```bash
+pip install -r requirements.txt
+```
+En el caso de el motor 3d se puede indicar el archivo .obj a cargar como argumento dentro del script `main.py`.
