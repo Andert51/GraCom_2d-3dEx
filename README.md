@@ -13,13 +13,13 @@ Este repositorio contiene una colección de tres proyectos enfocados en la visua
 Este proyecto se centra en el uso del algoritmo **Perlin Noise** para generar terrenos de forma procedural, una técnica muy utilizada en videojuegos, simulaciones y entornos generados dinámicamente. Se desarrollaron dos aplicaciones:
 
 - **Mapa de terreno 2D**: Generación en tiempo real de mapas topográficos con diferentes niveles de elevación y detalles visuales. Se representan las alturas usando degradados de color para simular tierra, agua, montañas y nieve.
-- **Terreno 3D estilo voxel (Minecraft-like)**: Un entorno tridimensional construido con bloques o *voxeles*, en donde el terreno se genera con Perlin Noise tridimensional. Cada bloque representa una unidad de terreno y puede simular colinas, cuevas o formaciones montañosas.
+- **Terreno 3D estilo voxel (Minecraft-like)**: Un entorno tridimensional construido con bloques o *voxeles*, en donde el terreno se genera con Perlin Noise tridimensional. Cada bloque representa una unidad de terreno y puede simular colinas, estanques o formaciones montañosas.
 
 ### 🛠 Tecnologías Utilizadas
 
 - `numpy` y `noise` para la generación de Perlin Noise.
-- `matplotlib` y `PIL` para visualización 2D.
-- `pyglet`, `moderngl`, o `ursina` para el entorno 3D voxel.
+- `pyrr` y `tkinter` para visualización 2D.
+- `PyGLM`, `moderngl` y `opensimplex` para el entorno 3D voxel.
 
 ### 📸 Capturas
 
@@ -43,7 +43,7 @@ Se incluyen herramientas para cargar modelos personalizados y rotarlos, escalar 
 
 ### 🛠 Tecnologías Utilizadas
 
-- `pygame` o `pyglet` para renderizado en tiempo real.
+- `pygame` y `numpy` para renderizado en tiempo real.
 - Parsers personalizados en Python para leer archivos `.obj`.
 - Transformaciones 3D: matrices de rotación, proyección y translación.
 
